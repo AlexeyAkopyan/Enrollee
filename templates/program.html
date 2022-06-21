@@ -15,25 +15,27 @@
         </ul>
     </header>
 </div>
-<div class="container">
-    <h1>Educational programs</h1>
-    <div class="bd-example">
-        <ul class="list-group">
-            {{ range .}}
-            <li class="list-group-item" aria-disabled="false">
-                <a href="{{ .GetUrl }}"><h5>{{ .Name }}</h5></a>
-                <h7>{{ .Department }}</h7>
-            </li>
-            {{end}}
-        </ul>
-    </div>
-
-<!--    {% for program in programs %}-->
-<!--    <div class="col-lg-4 themed-grid-col"><a href="{% url 'about' %}">-->
-
-<!--    </a>-->
-<!--    </div>-->
-<!--    {% endfor %}-->
+<h1>Educational program competition</h1>
+<h2>{{ .Name }}</h2>
+<div class="bd-example">
+    <table class="table table-sm table-bordered">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Score</th>
+            <th scope="col">Verdict</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ range $i, $e := .Enrollees}}
+        <tr>
+            <th scope="row">{{ inc $i }}</th>
+            <td>{{ .GetFullName }}</td>
+            <td>{{ .TotalResult }}</td>
+            <td>{{ .Verdict }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
 </div>
-</body>
-</html>
