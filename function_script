@@ -1,0 +1,107 @@
+SELECT * 
+FROM enrollee
+INNER JOIN program_enrollee USING(enrollee_id)
+INNER JOIN program USING (program_id)
+WHERE name_program = 'Applied Mathematics and Computer science'
+
+SELECT * FROM program_enrollee
+
+CREATE OR REPLACE FUNCTION get_enrollees_by_program_name (program_name VARCHAR(60))
+RETURNS table (first_name VARCHAR(20),
+			   last_name VARCHAR(20),
+			   middle_name VARCHAR(20),
+			   total_result BIGINT) AS $$
+BEGIN
+	RETURN query
+			SELECT enrollee.first_name, enrollee.last_name, enrollee.middle_name, SUM(result) AS total_result 
+			FROM enrollee
+			INNER JOIN enrollee_subject USING(enrollee_id)
+			INNER JOIN program_enrollee USING(enrollee_id)
+			INNER JOIN program USING(program_id)
+			INNER JOIN program_subject USING(program_id)
+			WHERE program.name_program = program_name AND enrollee_subject.subject_id = program_subject.subject_id
+			GROUP BY enrollee_id
+			ORDER BY total_result DESC;
+END; 
+$$ 
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_available_to_enrollee_programs (enrollee_login VARCHAR(60))
+RETURNS table (name_program VARCHAR(60)) AS $$
+BEGIN
+	RETURN query
+		SELECT program.name_program
+		FROM enrollee
+			INNER JOIN enrollee_subject USING(enrollee_id)
+			INNER JOIN program_enrollee USING(enrollee_id)
+			INNER JOIN program USING(program_id)
+			INNER JOIN program_subject USING(program_id)
+			WHERE enrollee.login = enrollee_login AND 
+			enrollee_subject.subject_id = program_subject.subject_id AND 
+			enrollee_subject.result >= program_subject.min_result
+			GROUP BY program.program_id
+			HAVING COUNT(*) = (SELECT COUNT(*) FROM program_subject AS ps WHERE ps.program_id = program.program_id);
+END; 
+$$ 
+LANGUAGE plpgsql;
+
+SELECT * FROM get_enrollees_by_program_name('Applied Mathematics and Computer science')
+
+SELECT * FROM program
+
+
+SELECT program.name_program
+FROM enrollee
+	INNER JOIN enrollee_subject USING(enrollee_id)
+	INNER JOIN program_enrollee USING(enrollee_id)
+
+	INNER JOIN program_subject USING(program_id)
+	INNER JOIN program USING(program_id)
+	WHERE enrollee_id = 4 AND 
+	enrollee_subject.subject_id = program_subject.subject_id AND 
+	enrollee_subject.result >= program_subject.min_result
+	GROUP BY program.program_id
+	HAVING COUNT(*) = (SELECT COUNT(*) FROM program_subject AS ps WHERE ps.program_id = program.program_id)
+	
+	
+SELECT program.name_program
+FROM subject
+	INNER JOIN enrollee_subject USING(subject_id)
+	INNER JOIN program_subject USING(subject_id)
+	INNER JOIN program USING(program_id)
+	WHERE enrollee_id = 32 AND 
+	enrollee_subject.result >= program_subject.min_result
+	GROUP BY program.program_id
+	HAVING COUNT(*) = (SELECT COUNT(*) FROM program_subject AS ps WHERE ps.program_id = program.program_id)
+	
+SELECT * FROM enrollee
+	
+SELECT * FROM get_available_to_enrollee_programs ('vorobyov_dmitry@gmail.com')
+	
+SELECT name_program, subjects, plan, name_department, min_results FROM get_programs (plan)
+
+CREATE OR REPLACE FUNCTION get_programs_order_by_plan ()
+RETURNS TABLE(name_program VARCHAR, subjects TEXT, plan INT, name_department VARCHAR, min_results TEXT) AS $$
+BEGIN
+	return query
+		SELECT program.name_program, STRING_AGG(name_subject, ';') AS subjects, program.plan, department.name_department, STRING_AGG(CAST(program_subject.min_result as varchar(3)), ';') as min_results
+		FROM program
+		INNER JOIN program_subject USING(program_id)
+		INNER JOIN subject USING(subject_id)
+		INNER JOIN department USING(department_id)
+		GROUP BY program.program_id, program.plan, department.name_department
+		ORDER BY plan;
+END; 
+$$ 
+LANGUAGE plpgsql;
+
+
+SELECT name_program, subjects, plan, name_department, min_results
+FROM get_programs_order_by_program ()
+WHERE 'Oil' IN(name_program)
+
+
+
+
+
